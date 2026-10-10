@@ -1,0 +1,47 @@
+name: Deploy PdfCraft to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Configure GitHub Pages
+        uses: actions/configure-pages@v5
+
+      - name: Extract official PdfCraft web build
+        run: |
+          unzip -q pdfcraft-web-0.5.0.zip -d extracted
+          mkdir site
+          cp -R extracted/pdfcraft-web-0.5.0/. site/
+          touch site/.nojekyll
+          test -f site/index.html
+          test -f site/pdfcraft-web-75592abd2e18a6b1_bg.wasm
+
+      - name: Upload website files
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: site
+
+      - name: Deploy website
+        id: deployment
+        uses: actions/deploy-pages@v4
